@@ -38,8 +38,8 @@
     </dependency>
     <dependency>
       <groupId>org.apache.pulsar</groupId>
-      <artifactId>pulsar-common</artifactId>
-      <version>3.0.8</version>
+      <artifactId>pulsar-client</artifactId>
+      <version>4.1.0</version>
     </dependency>
   </dependencies>
 

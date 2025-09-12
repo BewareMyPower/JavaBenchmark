@@ -1,7 +1,7 @@
 package io.bewaremypower;
 
-import io.netty.util.Recycler;
 import java.util.concurrent.TimeUnit;
+import org.apache.pulsar.shade.io.netty.util.Recycler;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Warmup;
