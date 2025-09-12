@@ -22,6 +22,14 @@ public class RecyclerBenchmark {
   @Warmup(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
   @Benchmark
+  public void testFastRecycler() {
+    final var tuple = SingleThreadRecyclableTuple.get(1, "hello", 3.14);
+    tuple.recycle();
+  }
+
+  @Warmup(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
+  @Measurement(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
+  @Benchmark
   public void testRecord(Blackhole blackhole) {
     final var tuple = new Tuple(1, "hello", 3.14);
     blackhole.consume(tuple);
