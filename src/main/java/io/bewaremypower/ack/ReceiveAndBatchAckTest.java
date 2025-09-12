@@ -1,0 +1,62 @@
+package io.bewaremypower.ack;
+
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.function.Function;
+import org.apache.pulsar.client.api.MessageIdAdv;
+import org.apache.pulsar.common.util.collections.ConcurrentBitSetRecyclable;
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.Measurement;
+import org.openjdk.jmh.annotations.Warmup;
+import org.openjdk.jmh.runner.Runner;
+import org.openjdk.jmh.runner.RunnerException;
+import org.openjdk.jmh.runner.options.OptionsBuilder;
+
+public class ReceiveAndBatchAckTest {
+
+  private static final int BATCH_SIZE = 100;
+  private static final int NUM_ENTRIES = 100;
+
+  private static <T extends BitSetInterface> void run(Function<BitSet, T> bitSetFactory)
+      throws InterruptedException {
+    final var consumer = new Consumer<>(new AckTracker<>(bitSetFactory), BATCH_SIZE, NUM_ENTRIES);
+    consumer.messageReceived();
+    final var msgIds = new ArrayList<MessageIdAdv>(50);
+    for (int i = 0; i < BATCH_SIZE; i++) {
+      final var msgId = consumer.receive();
+      msgIds.add(msgId);
+      if (msgIds.size() >= 10) {
+        msgIds.forEach(consumer::acknowledge);
+        msgIds.clear();
+      }
+    }
+    consumer.flush();
+  }
+
+  @Warmup(iterations = 5, time = 1)
+  @Measurement(iterations = 10, time = 1)
+  @Benchmark
+  public void testConcurrentBitSetRecyclable() throws InterruptedException {
+    run(bitSet -> new RecyclableBitSet(ConcurrentBitSetRecyclable.create(bitSet)));
+  }
+
+  @Warmup(iterations = 5, time = 1)
+  @Measurement(iterations = 10, time = 1)
+  @Benchmark
+  public void testStampedLockBitSet() throws InterruptedException {
+    run(StampedLockBitSet::new);
+  }
+
+  @Warmup(iterations = 5, time = 1)
+  @Measurement(iterations = 10, time = 1)
+  @Benchmark
+  public void testSynchronizedBitSet() throws InterruptedException {
+    run(SynchronizedBitSet::new);
+  }
+
+  public static void main(String[] args) throws RunnerException {
+    final var opt =
+        new OptionsBuilder().include(ReceiveAndBatchAckTest.class.getSimpleName()).forks(1).build();
+    new Runner(opt).run();
+  }
+}
