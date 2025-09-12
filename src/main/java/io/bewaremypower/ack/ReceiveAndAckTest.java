@@ -19,7 +19,7 @@ public class ReceiveAndAckTest {
       throws InterruptedException {
     final var consumer = new Consumer<>(new AckTracker<T>(bitSetFactory), BATCH_SIZE, NUM_ENTRIES);
     consumer.messageReceived();
-    for (int i = 0; i < BATCH_SIZE; i++) {
+    for (int i = 0; i < BATCH_SIZE * NUM_ENTRIES; i++) {
       final var msgId = consumer.receive();
       consumer.acknowledge(msgId);
     }
@@ -34,14 +34,14 @@ public class ReceiveAndAckTest {
   }
 
   @Warmup(iterations = 5, time = 1)
-  @Measurement(iterations = 10, time = 1)
+  @Measurement(iterations = 10, time = 2)
   @Benchmark
   public void testStampedLockBitSet() throws InterruptedException {
     run(StampedLockBitSet::new);
   }
 
   @Warmup(iterations = 5, time = 1)
-  @Measurement(iterations = 10, time = 1)
+  @Measurement(iterations = 10, time = 2)
   @Benchmark
   public void testSynchronizedBitSet() throws InterruptedException {
     run(SynchronizedBitSet::new);
