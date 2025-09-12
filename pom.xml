@@ -36,6 +36,11 @@
       <artifactId>caffeine</artifactId>
       <version>3.1.8</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.pulsar</groupId>
+      <artifactId>pulsar-common</artifactId>
+      <version>3.0.8</version>
+    </dependency>
   </dependencies>
 
   <build>
