@@ -2,6 +2,7 @@ package io.bewaremypower;
 
 import io.bewaremypower.ack.BitSetInterface;
 import io.bewaremypower.ack.RecyclableBitSet;
+import io.bewaremypower.ack.StampedLockBitSet;
 import io.bewaremypower.ack.SynchronizedBitSet;
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -25,7 +26,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 public class AckTrackerBitSetTest {
 
-  static final int BATCH_SIZE = 500;
+  static final int BATCH_SIZE = 100;
 
   static class AckTracker<T extends BitSetInterface> {
 
@@ -38,14 +39,18 @@ public class AckTrackerBitSetTest {
     }
 
     boolean isDuplicated(MessageIdAdv msgId) {
-      final var bitSet = pendingIndividualBatchIndexAcks.get(msgId);
+      final var key =
+          new MessageIdImpl(msgId.getLedgerId(), msgId.getEntryId(), msgId.getPartitionIndex());
+      final var bitSet = pendingIndividualBatchIndexAcks.get(key);
       return bitSet != null && !bitSet.get(msgId.getBatchIndex());
     }
 
     void acknowledge(MessageIdAdv msgId) {
+      final var key =
+          new MessageIdImpl(msgId.getLedgerId(), msgId.getEntryId(), msgId.getPartitionIndex());
       final var bitSet =
           pendingIndividualBatchIndexAcks.computeIfAbsent(
-              new MessageIdImpl(msgId.getLedgerId(), msgId.getEntryId(), msgId.getPartitionIndex()),
+              key,
               __ -> {
                 final var ackSet = msgId.getAckSet();
                 synchronized (ackSet) {
@@ -115,6 +120,14 @@ public class AckTrackerBitSetTest {
   public void testConcurrentBitSetRecyclable() throws InterruptedException {
     final var tracker =
         new AckTracker<>(bitSet -> new RecyclableBitSet(ConcurrentBitSetRecyclable.create(bitSet)));
+    new Consumer<>(tracker).run();
+  }
+
+  @Warmup(iterations = 5, time = 1)
+  @Measurement(iterations = 10, time = 1)
+  @Benchmark
+  public void testStampedLockBitSet() throws InterruptedException {
+    final var tracker = new AckTracker<>(StampedLockBitSet::new);
     new Consumer<>(tracker).run();
   }
 

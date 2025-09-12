@@ -4,7 +4,7 @@ import org.apache.pulsar.common.util.collections.ConcurrentBitSetRecyclable;
 
 public class RecyclableBitSet implements BitSetInterface {
 
-  final ConcurrentBitSetRecyclable bitSetRecyclable;
+  private final ConcurrentBitSetRecyclable bitSetRecyclable;
 
   public RecyclableBitSet(ConcurrentBitSetRecyclable bitSetRecyclable) {
     this.bitSetRecyclable = bitSetRecyclable;
