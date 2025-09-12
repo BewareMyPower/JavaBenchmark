@@ -1,5 +1,8 @@
 package io.bewaremypower;
 
+import io.bewaremypower.ack.BitSetInterface;
+import io.bewaremypower.ack.RecyclableBitSet;
+import io.bewaremypower.ack.SynchronizedBitSet;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -23,16 +26,6 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 public class AckTrackerBitSetTest {
 
   static final int BATCH_SIZE = 500;
-
-  interface BitSetInterface {
-    boolean get(int i);
-
-    void clear(int i);
-
-    long[] toLongArray();
-
-    default void recycle() {}
-  }
 
   static class AckTracker<T extends BitSetInterface> {
 
@@ -116,65 +109,6 @@ public class AckTrackerBitSetTest {
     }
   }
 
-  static class RecyclableBitSet implements BitSetInterface {
-
-    final ConcurrentBitSetRecyclable bitSetRecyclable;
-
-    RecyclableBitSet(ConcurrentBitSetRecyclable bitSetRecyclable) {
-      this.bitSetRecyclable = bitSetRecyclable;
-    }
-
-    @Override
-    public boolean get(int i) {
-      return bitSetRecyclable.get(i);
-    }
-
-    @Override
-    public void clear(int i) {
-      bitSetRecyclable.clear(i);
-    }
-
-    @Override
-    public long[] toLongArray() {
-      return bitSetRecyclable.toLongArray();
-    }
-
-    @Override
-    public void recycle() {
-      bitSetRecyclable.recycle();
-    }
-  }
-
-  static class SynchronizedBitSet implements BitSetInterface {
-
-    final BitSet bitSet;
-
-    SynchronizedBitSet(BitSet bitSet) {
-      this.bitSet = bitSet;
-    }
-
-    @Override
-    public boolean get(int i) {
-      synchronized (bitSet) {
-        return bitSet.get(i);
-      }
-    }
-
-    @Override
-    public void clear(int i) {
-      synchronized (bitSet) {
-        bitSet.clear(i);
-      }
-    }
-
-    @Override
-    public long[] toLongArray() {
-      synchronized (bitSet) {
-        return bitSet.toLongArray();
-      }
-    }
-  }
-
   @Warmup(iterations = 5, time = 1)
   @Measurement(iterations = 10, time = 1)
   @Benchmark
@@ -188,11 +122,11 @@ public class AckTrackerBitSetTest {
   @Measurement(iterations = 10, time = 1)
   @Benchmark
   public void testSynchronizedBitSet() throws InterruptedException {
-    final var tracker = new AckTracker<>(bitSet -> new SynchronizedBitSet((BitSet) bitSet.clone()));
+    final var tracker = new AckTracker<>(SynchronizedBitSet::new);
     new Consumer<>(tracker).run();
   }
 
-  public static void main(String[] args) throws RunnerException, InterruptedException {
+  public static void main(String[] args) throws RunnerException {
     final var opt =
         new OptionsBuilder().include(AckTrackerBitSetTest.class.getSimpleName()).forks(1).build();
     new Runner(opt).run();
