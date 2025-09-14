@@ -2,15 +2,10 @@ package io.bewaremypower.recycler;
 
 import java.util.ArrayDeque;
 
-public abstract class ThreadLocalRecycler<T> {
+public abstract class ThreadLocalQueueRecycler<T> {
 
   private final ThreadLocal<ArrayDeque<T>> localQueue =
-      new ThreadLocal<>() {
-        @Override
-        protected ArrayDeque<T> initialValue() {
-          return new ArrayDeque<>(10);
-        }
-      };
+      ThreadLocal.withInitial(() -> new ArrayDeque<>(10));
 
   protected abstract T newObject();
 

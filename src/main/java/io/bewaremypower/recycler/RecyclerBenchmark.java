@@ -22,8 +22,16 @@ public class RecyclerBenchmark {
   @Warmup(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
   @Benchmark
-  public void testFastRecycler() {
-    final var tuple = SingleThreadRecyclableTuple.get(1, "hello", 3.14);
+  public void testThreadLocalQueueRecycler() {
+    final var tuple = ThreadLocalQueueTuple.get(1, "hello", 3.14);
+    tuple.recycle();
+  }
+
+  @Warmup(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
+  @Measurement(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
+  @Benchmark
+  public void testThreadLocalSingletonRecycler() {
+    final var tuple = ThreadLocalSingletonTuple.get(1, "hello", 3.14);
     tuple.recycle();
   }
 
